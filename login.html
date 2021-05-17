@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        メールアドレス<input id="mailAddress" type="mailAddress" required/>
+    </div>
+    <div>
+        パスワード<input id="password" type="password" required/>
+    </div>
+    <button id="login">ログイン</button>
+    <button id="register">新規登録</button>
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey:,
+    authDomain: "login-04-5a39d.firebaseapp.com",
+    projectId: "login-04-5a39d",
+    storageBucket: "login-04-5a39d.appspot.com",
+    messagingSenderId: "566054610605",
+    appId: "1:566054610605:web:07973bd48fbeedef5b8824"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  //新規登録処理
+    register.addEventListener('click', function(e) {
+    var mailAddress = document.getElementById('mailAddress').value;
+    var password = document.getElementById('password').value;
+    
+    firebase.auth().createUserWithEmailAndPassword(mailAddress, password)
+    .catch(function(error) {
+        alert('登録できません（' + error.message + '）');
+    });
+    });
+
+    //ログイン処理
+login.addEventListener('click', function(e) {
+  var mailAddress = document.getElementById('mailAddress').value;
+  var password = document.getElementById('password').value;
+  
+  firebase.auth().signInWithEmailAndPassword(mailAddress, password)
+  .catch(function(error) {
+    alert('ログインできません（' + error.message + '）');
+  });
+});
+
+//認証状態の確認
+firebase.auth().onAuthStateChanged(function(user) {
+  if(user) {
+    //ログイン状態
+    alert("ログインに成功しました");
+    window.location.href = 'chatapp.html'
+  }else{
+    //ログアウト状態
+  }
+});
+
+</script>
+
+</body>
+</html>

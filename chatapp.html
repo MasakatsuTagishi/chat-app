@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>chatApp</title>
+  <style>
+    
+    
+
+    #list {
+      list-style: none;
+    }
+    
+    #output li {
+      background: white;
+      width: 230px;
+      list-style: none;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+  /* 付箋 */
+    .note {
+      background-color: aliceblue;
+      padding: 10px;
+    }
+    .note > input[type="text"] {
+      width: 90%;
+      height: 5rem;
+    }
+
+    #sticky-note-container {
+      height: 400px;
+    }
+    .note {
+     background-color: aliceblue;
+     padding: 10px;
+      cursor: pointer;
+    }
+
+    .note > input[type="text"] {
+     width: 90%;
+     height: 5rem;
+    }
+
+    .drag-and-drop {
+    cursor: move;
+    position: absolute;
+    z-index: 1000;
+    }
+
+    .drag {
+    z-index: 1001;
+    }
+
+    .midashi{
+    font-size: 30px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>realtime chat</h1>
+  <!-- 入力場所を作成しよう -->
+    <ul id="list">
+      <li>
+        <label for="name">見出し</label>
+        <input type="text" id="name">
+      </li>
+      <li>
+        <textarea name="" id="text" cols="30" rows="10"></textarea>
+      </li>   
+      <li>
+        <button id="send">send</button>
+      </li>
+    </ul> 
+    <!-- 付箋 -->
+    <!-- <div id="controller">
+      <input type="button" id="add-button" value="追加">
+    </div>
+    <div id="sticky-note-container">
+
+    </div> -->
+
+  <!-- データ出力場所 -->
+    <div class="drag-and-drop"><ul id="output"></ul>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!-- jquery ui -->
+  <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+  
+  <!-- 以下にfirebaseのコードを貼り付けよう -->
+
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase.js"></script>
+
+  <!-- TODO: Add SDKs for Firebase products that you want to use
+      https://firebase.google.com/docs/web/setup#available-libraries -->
+
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: ,
+      authDomain: "chat-app04.firebaseapp.com",
+      projectId: "chat-app04",
+      storageBucket: "chat-app04.appspot.com",
+      messagingSenderId: "1005358088430",
+      appId: "1:1005358088430:web:7b098d75c16b3ad617b3ff"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    // 追記場所
+    var db = firebase.firestore().collection('chat04');
+
+  </script>
+
+  <script>
+    // 日時をいい感じの形式にする関数
+    function convertFromFirestoreTimestampToDatetime(timestamp) {
+      const _d = timestamp ? new Date(timestamp * 1000) : new Date();
+      const Y = _d.getFullYear();
+      const m = (_d.getMonth() + 1).toString().padStart(2, '0');
+      const d = _d.getDate().toString().padStart(2, '0');
+      const H = _d.getHours().toString().padStart(2, '0');
+      const i = _d.getMinutes().toString().padStart(2, '0');
+      const s = _d.getSeconds().toString().padStart(2, '0');
+      return `${Y}/${m}/${d} ${H}:${i}:${s}`;
+    }
+
+    $('#send').on('click',function() {
+      const data = {
+        name: $('#name').val(),
+        text: $('#text').val(),
+        time: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      db.add(data);
+      $('#text').val('');
+    });
+
+    $('#text').on('keydown',function(e)  {
+        if(e.keyCode === 13 ) {
+          const data = {
+            name: $('#name').val(),
+            text: $('#text').val(),
+            time: firebase.firestore.FieldValue.serverTimestamp(),            
+          };
+          db.add(data);
+          $('#text').val('');         
+        }
+    });
+
+    // 付箋
+    // function getNewNote() {
+    //   return  '<div class="note">' + 
+    //           '<input type="text">' +
+    //          '</div>';
+    // };
+    // $('#add-button').on('click', function(){
+    //    var $note = $(getNewNote());
+    //    $note.draggable();
+    //    $('#sticky-note-container').append($note);
+    // });
+    
+    // オンライン上のデータベースでデータの追加や更新、削除が行われたタイミングで{}のなんか
+    // orderByでデータの並び替えができる
+    db.orderBy('time','desc').onSnapshot(function (querySnapshot) {
+      // 扱いにくいデータを「ただのオブジェクト配列」にする
+      const dataArray = [];
+      querySnapshot.docs.forEach(function(doc){
+        const data = {
+          id: doc.id,
+          data: doc.data(),
+        }
+        dataArray.push(data);
+      });
+      console.log(dataArray);
+
+      // 配列をタグに入れる
+      const tagArray =[];
+      dataArray.forEach(function(data) {
+        tagArray.push(`
+          <li id="${data.id}">
+            <p class="midashi">${data.data.name}</p>
+            <p>${data.data.text}</p>
+            
+          </li>
+        `)
+      })
+      // 画面に表示する
+      $('#output').html(tagArray);
+
+    });
+
+    (function(){
+
+    //要素の取得
+    var elements = document.getElementsByClassName("drag-and-drop");
+
+    //要素内のクリックされた位置を取得するグローバル（のような）変数
+    var x;
+    var y;
+
+    //マウスが要素内で押されたとき、又はタッチされたとき発火
+    for(var i = 0; i < elements.length; i++) {
+        elements[i].addEventListener("mousedown", mdown, false);
+        elements[i].addEventListener("touchstart", mdown, false);
+    }
+
+    //マウスが押された際の関数
+    function mdown(e) {
+
+        //クラス名に .drag を追加
+        this.classList.add("drag");
+
+        //タッチデイベントとマウスのイベントの差異を吸収
+        if(e.type === "mousedown") {
+            var event = e;
+        } else {
+            var event = e.changedTouches[0];
+        }
+
+        //要素内の相対座標を取得
+        x = event.pageX - this.offsetLeft;
+        y = event.pageY - this.offsetTop;
+
+        //ムーブイベントにコールバック
+        document.body.addEventListener("mousemove", mmove, false);
+        document.body.addEventListener("touchmove", mmove, false);
+    }
+
+    //マウスカーソルが動いたときに発火
+    function mmove(e) {
+
+        //ドラッグしている要素を取得
+        var drag = document.getElementsByClassName("drag")[0];
+
+        //同様にマウスとタッチの差異を吸収
+        if(e.type === "mousemove") {
+            var event = e;
+        } else {
+            var event = e.changedTouches[0];
+        }
+
+        //フリックしたときに画面を動かさないようにデフォルト動作を抑制
+        e.preventDefault();
+
+        //マウスが動いた場所に要素を動かす
+        drag.style.top = event.pageY - y + "px";
+        drag.style.left = event.pageX - x + "px";
+
+        //マウスボタンが離されたとき、またはカーソルが外れたとき発火
+        drag.addEventListener("mouseup", mup, false);
+        document.body.addEventListener("mouseleave", mup, false);
+        drag.addEventListener("touchend", mup, false);
+        document.body.addEventListener("touchleave", mup, false);
+
+    }
+
+    //マウスボタンが上がったら発火
+    function mup(e) {
+        var drag = document.getElementsByClassName("drag")[0];
+
+        //ムーブベントハンドラの消去
+        document.body.removeEventListener("mousemove", mmove, false);
+        drag.removeEventListener("mouseup", mup, false);
+        document.body.removeEventListener("touchmove", mmove, false);
+        drag.removeEventListener("touchend", mup, false);
+
+        //クラス名 .drag も消す
+        drag.classList.remove("drag");
+    }
+
+})()
+
+  </script>
+</body>
+
+</html>
